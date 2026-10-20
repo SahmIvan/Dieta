@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#2e6a3e" id="themeColor">
+<title>Plan semanal</title>
+<style>
+  :root {
+    --bg: #f2eee2;
+    --paper: #fcfaf4;
+    --ink: #222d1f;
+    --muted: #69725f;
+    --line: #ddd6c2;
+    --green: #2e6a3e;
+    --green-soft: #e0ebd3;
+    --orange: #cf5a22;
+    --orange-soft: #f8e3d5;
+    --radius: 14px;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  body[data-tab="dieta"]  { --accent: var(--green);  --soft: var(--green-soft); }
+  body[data-tab="lista"]  { --accent: var(--green);  --soft: var(--green-soft); }
+  body[data-tab="rutina"] { --accent: var(--orange); --soft: var(--orange-soft); }
+  [hidden] { display: none !important; }
+
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 16px 56px; }
+
+  header.top { padding: 30px 0 18px; }
+  .kicker {
+    font-size: .76rem; letter-spacing: .15em; text-transform: uppercase;
+    font-weight: 700; color: var(--accent);
+  }
+  h1 {
+    font-family: var(--serif); font-size: 2.2rem; line-height: 1.08;
+    margin-top: 6px; font-weight: 700;
+  }
+  .sub { color: var(--muted); margin-top: 8px; font-size: .95rem; }
+
+  .tabs {
+    position: sticky; top: 0; z-index: 5; background: var(--bg);
+    display: flex; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line);
+  }
+  .tabs button {
+    flex: 1 1 0; padding: 12px 6px; border-radius: 999px;
+    border: 1.5px solid var(--line); background: transparent;
+    font: inherit; font-size: .92rem; line-height: 1.2; font-weight: 650;
+    color: var(--muted); cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .tabs button:nth-child(3) { flex-grow: 1.7; }
+  .tabs button[aria-selected="true"] {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+  .tabs button:focus-visible, .days button:focus-visible, details summary:focus-visible {
+    outline: 3px solid var(--accent); outline-offset: 2px;
+  }
+
+  /* ---------- Dieta ---------- */
+  .days {
+    display: flex; gap: 6px; overflow-x: auto; padding: 16px 2px 6px;
+    scrollbar-width: none;
+  }
+  .days::-webkit-scrollbar { display: none; }
+  .days button {
+    flex: 1 0 auto; min-width: 44px; padding: 9px 2px;
+    border: 1.5px solid var(--line); border-radius: 12px; background: var(--paper);
+    font: inherit; font-size: .9rem; font-weight: 650; color: var(--ink);
+    cursor: pointer; position: relative;
+  }
+  .days button[aria-pressed="true"] {
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+  .days button.today::after {
+    content: ""; position: absolute; top: 5px; right: 6px;
+    width: 6px; height: 6px; border-radius: 50%; background: var(--orange);
+  }
+  .days button[aria-pressed="true"].today::after { background: #fff; }
+
+  .dayhead {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px; margin-top: 18px;
+  }
+  .dayhead h2 { font-family: var(--serif); font-size: 1.6rem; }
+  .chip {
+    font-size: .72rem; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+    background: var(--soft); color: var(--accent); white-space: nowrap;
+  }
+
+  .meals { display: grid; gap: 12px; margin-top: 14px; }
+  .meal {
+    background: var(--paper); border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .meal h3 {
+    font-size: .76rem; text-transform: uppercase; letter-spacing: .12em;
+    color: var(--accent);
+  }
+  .meal ul { list-style: none; padding: 0; margin-top: 8px; display: grid; gap: 8px; }
+  .meal li { position: relative; padding-left: 16px; }
+  .meal li::before {
+    content: ""; position: absolute; left: 0; top: .6em;
+    width: 6px; height: 6px; border-radius: 50%; background: var(--accent); opacity: .55;
+  }
+  .note { display: block; color: var(--muted); font-size: .82rem; }
+
+  /* opciones a) b) una debajo de la otra */
+  .opts { list-style: none; padding: 0; margin: 6px 0 0; display: grid; gap: 6px; }
+  .opts li { display: grid; grid-template-columns: 1.6em 1fr; font-size: .92rem; color: #435040; }
+  .opts li b { color: var(--accent); }
+  .meal ul.opts { margin-top: 6px; gap: 6px; }
+  .meal .opts li { padding-left: 0; }
+  .meal .opts li::before { content: none; }
+
+  .foot {
+    margin-top: 18px; padding: 14px 16px; border-radius: var(--radius);
+    background: var(--soft); color: #34412f; font-size: .9rem;
+  }
+  .foot p + p { margin-top: 6px; }
+
+  /* ---------- Rutina ---------- */
+  .week { display: grid; gap: 12px; margin-top: 18px; }
+  .rday {
+    background: var(--paper); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 14px 16px;
+  }
+  .rday.today { border-color: var(--accent); box-shadow: 0 0 0 3px var(--soft); }
+  .rhead { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .rhead h3 { font-family: var(--serif); font-size: 1.3rem; }
+  .rhead .right { display: flex; gap: 6px; align-items: center; }
+  .badge-hoy {
+    font-size: .68rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+    background: var(--accent); color: #fff; padding: 3px 8px; border-radius: 999px;
+  }
+  .blk {
+    display: flex; justify-content: space-between; gap: 14px;
+    padding: 9px 0; border-top: 1px dashed var(--line); font-size: .97rem;
+  }
+  .blk .m { color: var(--muted); text-align: right; font-size: .9rem; }
+  .blk.rest { color: var(--muted); font-style: italic; }
+
+  details.gym { margin-top: 8px; }
+  details.gym summary {
+    list-style: none; cursor: pointer; display: flex; align-items: center;
+    justify-content: space-between; gap: 10px; padding: 13px 14px;
+    background: var(--accent); color: #fff; border-radius: 12px;
+    font-weight: 700; letter-spacing: .02em;
+  }
+  details.gym summary::-webkit-details-marker { display: none; }
+  details.gym summary::after {
+    content: "›"; font-size: 1.5rem; line-height: 1; transition: transform .2s;
+  }
+  details.gym[open] summary { border-radius: 12px 12px 0 0; }
+  details.gym[open] summary::after { transform: rotate(90deg); }
+  .gymbody {
+    background: var(--paper); border: 1.5px solid var(--accent); border-top: 0;
+    border-radius: 0 0 12px 12px; padding: 12px 16px 16px;
+  }
+  .gymmeta { color: var(--muted); font-size: .86rem; margin-bottom: 8px; }
+  .gymbody ol { list-style: none; padding: 0; counter-reset: ex; }
+  .gymbody li {
+    counter-increment: ex; display: flex; gap: 12px; align-items: baseline;
+    padding: 8px 0; border-bottom: 1px solid var(--line);
+  }
+  .gymbody li:last-child { border-bottom: 0; }
+  .gymbody li::before {
+    content: counter(ex); flex: none; width: 24px; height: 24px; border-radius: 50%;
+    background: var(--soft); color: var(--accent); font-size: .8rem; font-weight: 800;
+    display: grid; place-items: center; transform: translateY(2px);
+  }
+
+  /* ---------- Lista de comidas ---------- */
+  .lista { display: grid; gap: 12px; margin-top: 18px; }
+  .lcard {
+    background: var(--paper); border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .lcard h3 {
+    font-size: .76rem; text-transform: uppercase; letter-spacing: .12em;
+    color: var(--accent);
+  }
+  .lbase {
+    background: var(--soft); border-radius: 10px; padding: 10px 14px;
+    margin-top: 10px; font-size: .93rem; color: #34412f;
+  }
+  .lbase b { display: block; font-size: .8rem; color: var(--accent); }
+  .lbase ul { list-style: none; padding: 0; margin-top: 4px; display: grid; gap: 4px; }
+  .lbase li { position: relative; padding-left: 14px; }
+  .lbase li::before {
+    content: ""; position: absolute; left: 0; top: .6em;
+    width: 6px; height: 6px; border-radius: 50%; background: var(--accent); opacity: .55;
+  }
+  .lorden { color: var(--muted); font-size: .82rem; margin-top: 12px; }
+  .lopts { list-style: none; padding: 0; counter-reset: o; margin-top: 2px; }
+  .lopts > li {
+    counter-increment: o; display: flex; gap: 12px; align-items: flex-start;
+    padding: 10px 0; border-bottom: 1px solid var(--line);
+  }
+  .lopts > li:last-child { border-bottom: 0; }
+  .lopts > li::before {
+    content: counter(o); flex: none; width: 24px; height: 24px; border-radius: 50%;
+    background: var(--soft); color: var(--accent); font-size: .8rem; font-weight: 800;
+    display: grid; place-items: center; margin-top: 1px;
+  }
+  .when { display: block; color: var(--muted); font-size: .82rem; }
+  .lopts > li > div { flex: 1; min-width: 0; }
+  .lhead { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+  .cnt { flex: none; color: #8f9684; font-size: .74rem; white-space: nowrap; }
+  .linea { display: block; font-size: .93rem; }
+  .lnota { margin-top: 10px; color: var(--muted); font-size: .88rem; }
+
+  @media (min-width: 860px) {
+    h1 { font-size: 2.7rem; }
+    .meals { grid-template-columns: 1fr 1fr; align-items: start; }
+    .week { grid-template-columns: 1fr 1fr; align-items: start; }
+    .days button { flex: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body data-tab="dieta">
+<div class="wrap">
+  <header class="top">
+    <div class="kicker">Octubre 2026</div>
+    <h1>Plan semanal</h1>
+    <p class="sub">Qué comer y cómo entrenar, día por día.</p>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Secciones">
+    <button role="tab" id="t-dieta" aria-controls="dieta" aria-selected="true" data-tab="dieta">Dieta</button>
+    <button role="tab" id="t-rutina" aria-controls="rutina" aria-selected="false" data-tab="rutina">Rutina</button>
+    <button role="tab" id="t-lista" aria-controls="lista" aria-selected="false" data-tab="lista">Lista de comidas</button>
+  </nav>
+
+  <main>
+    <section id="dieta" role="tabpanel" aria-labelledby="t-dieta">
+      <div class="days" id="days" role="group" aria-label="Elegir día"></div>
+      <div class="dayhead"><h2 id="dayTitle"></h2><span class="chip" id="dayChip"></span></div>
+      <div class="meals" id="meals"></div>
+      <div class="foot">
+        <p><b>Bebidas:</b> agua natural. Una vez por semana, un Topo Chico de 600 ml con limón y una pizca de sal.</p>
+        <p><b>Comida ocasional:</b> 180–200 g de lomo de Costco en salsa roja.</p>
+      </div>
+    </section>
+
+    <section id="rutina" role="tabpanel" aria-labelledby="t-rutina" hidden>
+      <div class="week" id="week"></div>
+    </section>
+
+    <section id="lista" role="tabpanel" aria-labelledby="t-lista" hidden>
+      <div class="lista" id="listaBody"></div>
+    </section>
+  </main>
+</div>
+
+<script>
+(function () {
+  var DAYS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  var SHORT = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+  var TODAY = (new Date().getDay() + 6) % 7;
+  function $(id) { return document.getElementById(id); }
+
+  /* ================= RUTINA ================= */
+  var BRAZO = [
+    "Curl de bíceps declinado",
+    "Polea con barra recta para tríceps",
+    "Curl martillo en polea con cuerda",
+    "Tríceps con polea individual",
+    "Laterales para hombro",
+    "Press de hombro en máquina de discos"
+  ];
+  var PECHO = [
+    "Press con mancuerna inclinado",
+    "Remo en T con soporte en pecho abierto",
+    "Chest crossover high-to-low",
+    "Remo cerrado",
+    "Flys inclinados en máquina",
+    "Lat pulldown"
+  ];
+  var PIERNA = [
+    "Quad leg extension (máquina)",
+    "Ham curl acostado",
+    "Prensa sentado de frente",
+    "Extensión de pantorrilla sentado",
+    "Abductor",
+    "Adductor",
+    "Ham (seated) leg curl (máquina)",
+    "Pantorrilla de pie"
+  ];
+  var CAMINADORA = { t: "Caminadora", m: "10 min a 6 mph + 3 min a 3 mph" };
+
+  var WEEK = [
+    { chip: "Gym · Brazo", blocks: [
+      { t: "Caminata en la comida", m: "~1 km" },
+      { gym: { name: "Brazo", dur: "1 h", meta: "3 series · 1 RIR / al fallo", items: BRAZO } },
+      { t: "Paseo con Molly al llegar", m: "15 min" }
+    ]},
+    { chip: "Caminadora", blocks: [
+      { t: "Caminata en la comida", m: "~1 km" },
+      { t: "Paseo con Molly", m: "45–50 min" },
+      CAMINADORA
+    ]},
+    { chip: "Descanso", blocks: [
+      { t: "Descanso total de ejercicio", rest: true },
+      { t: "Caminata en la comida", m: "~1 km" }
+    ]},
+    { chip: "Gym · Pecho", blocks: [
+      { gym: { name: "Pecho", dur: "1 h", meta: "3 series · 1 RIR / al fallo", items: PECHO } },
+      { t: "Paseo con Molly", m: "15 min con sprints" }
+    ]},
+    { chip: "Gym · Brazo", blocks: [
+      { gym: { name: "Brazo", dur: "1 h", meta: "3 series · 1 RIR / al fallo", items: BRAZO } },
+      { t: "Paseo con Molly", m: "15 min con sprints" }
+    ]},
+    { chip: "Gym · Pierna", blocks: [
+      { gym: { name: "Pierna", dur: "1 h", meta: "3 series · 1–2 RIR aprox.", items: PIERNA } },
+      { t: "Paseo con Molly", m: "30 min" }
+    ]},
+    { chip: "Gym · Pecho", blocks: [
+      { gym: { name: "Pecho", dur: "1 h", meta: "3 series · 1 RIR / al fallo",
+               items: PECHO.concat(["Rear delt fly (13 repeticiones)"]) } },
+      { t: "Paseo con Molly", m: "30 min" },
+      { t: "Descanso", rest: true },
+      { t: "Paseo con Molly", m: "20 min" },
+      CAMINADORA
+    ]}
+  ];
+
+  function renderGym(g) {
+    return '<details class="gym"><summary><span>GYM – ' + g.name + ' · ' + g.dur + '</span></summary>' +
+      '<div class="gymbody"><p class="gymmeta">' + g.meta + '</p><ol>' +
+      g.items.map(function (x) { return "<li><span>" + x + "</span></li>"; }).join("") +
+      '</ol></div></details>';
+  }
+  function renderBlock(b) {
+    if (b.gym) return renderGym(b.gym);
+    if (b.rest) return '<div class="blk rest"><div>' + b.t + '</div></div>';
+    return '<div class="blk"><div>' + b.t + '</div><div class="m">' + b.m + '</div></div>';
+  }
+  function renderWeek() {
+    $("week").innerHTML = WEEK.map(function (d, i) {
+      var isToday = i === TODAY;
+      return '<article class="rday' + (isToday ? " today" : "") + '">' +
+        '<div class="rhead"><h3>' + DAYS[i] + '</h3><div class="right">' +
+        (isToday ? '<span class="badge-hoy">Hoy</span>' : "") +
+        '<span class="chip">' + d.chip + '</span></div></div>' +
+        d.blocks.map(renderBlock).join("") + '</article>';
+    }).join("");
+  }
+
+  /* ================= DIETA ================= */
+  // Un ítem es HTML. prot() arma "título + nota + opciones una debajo de otra".
+  function prot(head, opts, note) {
+    var h = head;
+    if (note) h += '<span class="note">' + note + '</span>';
+    if (opts) {
+      h += '<ul class="opts">' + opts.map(function (o, i) {
+        return '<li><b>' + "abc".charAt(i) + ')</b><span>' + o + '</span></li>';
+      }).join("") + '</ul>';
+    }
+    return h;
+  }
+
+  var OPT_PECHUGA = [
+    "Con miel: 1 tbsp de miel, limón, ajo y aceite de aguacate",
+    "Estilo chino: salsa de soya y una pizca de azúcar, cocinada con mucho brócoli y zanahoria. Ya lleva verdura, no se agrega otra"
+  ];
+  var OPT_BISTEC = [
+    "Diezmillo asado con cebolla y chile jalapeño",
+    "Espaldilla guisada con salsa de jitomate, rajas de chile poblano y 3 papas cambray"
+  ];
+  var OPT_POLLO = [
+    "Con 1–2 papas cambray, chile morrón, cebolla y 2 tsp de vino Torres 10 a mitad de la cocción",
+    "Con mucha zanahoria, cebolla y jitomate en cubitos"
+  ];
+  var OPT_SAB = [
+    "Bistec: diezmillo asado o espaldilla guisada, como el martes",
+    "Lomo en salsa roja"
+  ];
+
+  var PECHUGA = prot("<b>170–190 g de pechuga de pollo</b>", OPT_PECHUGA);
+  var BISTEC  = prot("<b>180–200 g de bistec</b>", OPT_BISTEC);
+  var POLLO   = prot("<b>2 muslos + 1 pierna de pollo</b>", OPT_POLLO, "2 piernas si las piezas son chicas");
+  var SAB     = prot("<b>180–200 g de bistec o lomo</b>", OPT_SAB);
+
+  var NUECES  = "5 almendras + 5 mitades de nuez";
+  var YOGURT  = prot("90–120 g de yogurt Yoplait de fresa sin azúcar", null, "Al menos 4 veces por semana");
+  var MANZANA = "1 manzana";
+  var AGUACATE = prot("½ aguacate", null, "En 3–4 cenas por semana");
+  var QUESA = "4 quesadillas con poquito queso";
+  var LENT = "½ taza de lentejas cocidas";
+
+  var LICUADO = [
+    "<b>Licuado:</b> 1 plátano (a veces 1½), 5 fresas, 1 tbsp de avena y 1½ tz de leche Lala Light"
+  ];
+  var ATUN = [
+    "<b>Atún en el trabajo:</b> 2 latas de Dolores en agua con 1 tbsp de crema, 1 tbsp de mayonesa McCormick light y 1 lata de verduras La Costeña",
+    "3 paquetes de Salmas (3 c/u)"
+  ];
+
+  function sides(conPechuga) {
+    return [
+      "180–190 g de arroz rojo o pasta de tornillo Barilla",
+      prot("150–160 g de brócoli y zanahoria", null,
+           conPechuga ? "Solo con la pechuga con miel. La estilo chino ya los lleva en la receta." : ""),
+      "20–40 g de ensalada de repollo, zanahoria rallada, cebolla y un poco de jalapeño y habanero",
+      "1 tortilla"
+    ];
+  }
+  function comida(i) {
+    var map = [PECHUGA, BISTEC, PECHUGA, POLLO, POLLO, SAB, POLLO];
+    return [map[i]].concat(sides(i === 0 || i === 2));
+  }
+
+  var HUEVOS = "<b>3 huevos revueltos</b> con champiñones, espinaca, jitomate y cebolla";
+  function cena(i) {
+    var map = [
+      ["<b>180–200 g de hígado de res asado</b>", "4 tortillas", LENT, AGUACATE],
+      ["<b>180–190 g de pechuga de pollo asada</b>", QUESA, LENT, AGUACATE],
+      ["<b>2 chuletas ahumadas</b> · 200 g aprox.", QUESA, LENT, AGUACATE],
+      [HUEVOS, QUESA, LENT, AGUACATE],
+      [HUEVOS, QUESA, LENT, AGUACATE],
+      [HUEVOS, QUESA, LENT, AGUACATE],
+      ["<b>Variable:</b> una de las cenas de la semana (hígado, pechuga, chuletas o huevos)", AGUACATE]
+    ];
+    return map[i];
+  }
+
+  function dayMeals(i) {
+    var weekday = i <= 4;
+    var gymManzana = i === 0 || (i >= 3 && i <= 5); // lun, jue, vie, sáb
+    var out = [];
+    out.push(["Desayuno", i === 5 ? ATUN : LICUADO]);
+    if (weekday) out.push(["Snack · 10 am", [NUECES]]);
+    if (gymManzana) out.push(["Antes del gym", [MANZANA]]);
+    if (i === 6) out.push(["Después del gym", [NUECES, YOGURT]]);
+    out.push(["Comida", comida(i)]);
+    if (weekday) out.push(["Al llegar a casa", [YOGURT]]);
+    out.push(["Cena", cena(i)]);
+    return out;
+  }
+
+  var current = TODAY;
+
+  function renderDays() {
+    $("days").innerHTML = SHORT.map(function (s, i) {
+      return '<button type="button" data-i="' + i + '" aria-pressed="' + (i === current) + '"' +
+        (i === TODAY ? ' class="today"' : "") + '>' + s + '</button>';
+    }).join("");
+  }
+  function renderDay() {
+    $("dayTitle").textContent = DAYS[current];
+    $("dayChip").textContent = WEEK[current].chip;
+    $("meals").innerHTML = dayMeals(current).map(function (m) {
+      return '<section class="meal"><h3>' + m[0] + '</h3><ul>' +
+        m[1].map(function (x) { return "<li>" + x + "</li>"; }).join("") + '</ul></section>';
+    }).join("");
+    renderDays();
+  }
+  $("days").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-i]");
+    if (!b) return;
+    current = +b.dataset.i;
+    renderDay();
+  });
+
+  /* ================= LISTA DE COMIDAS ================= */
+  var LISTA = [
+    { t: "Desayuno", orden: "Veces por semana", opts: [
+      { h: "<b>Licuado</b>", n: "6 veces", when: "Lun a Vie y Dom",
+        lines: ["1 plátano (a veces 1½), 5 fresas, 1 tbsp de avena y 1½ tz de leche Lala Light"] },
+      { h: "<b>Atún</b>", n: "1 vez", when: "Sáb",
+        lines: ["2 latas de Dolores en agua con 1 tbsp de crema, 1 tbsp de mayonesa McCormick light y 1 lata de verduras La Costeña",
+                "3 paquetes de Salmas (3 c/u)"] }
+    ]},
+    { t: "Snacks", orden: "Veces por semana", opts: [
+      { h: "<b>5 almendras + 5 mitades de nuez</b>", n: "6 veces", when: "A las 10 am de lunes a viernes y después del gym el domingo" },
+      { h: "<b>90–120 g de yogurt Yoplait de fresa sin azúcar</b>", n: "4–6 veces", when: "Al llegar a casa de lunes a viernes y después del gym el domingo. Al menos 4 veces por semana" },
+      { h: "<b>1 manzana</b>", n: "4 veces", when: "Antes del gym: lunes, jueves, viernes y sábado" }
+    ]},
+    { t: "Comida",
+      baseTitle: "Con cada comida (guarnición, verdura y ensalada)",
+      base: [
+        "180–190 g de arroz rojo o pasta de tornillo Barilla",
+        "150–160 g de brócoli y zanahoria (con la pechuga estilo chino no, ya los lleva)",
+        "20–40 g de ensalada de repollo, zanahoria rallada, cebolla y un poco de jalapeño y habanero",
+        "1 tortilla"
+      ],
+      orden: "Proteína · veces por semana", opts: [
+      { h: "<b>2 muslos + 1 pierna de pollo</b>", n: "3 veces", when: "Jue, Vie y Dom · 2 piernas si las piezas son chicas", sub: OPT_POLLO },
+      { h: "<b>170–190 g de pechuga de pollo</b>", n: "2 veces", when: "Lun y Mié", sub: OPT_PECHUGA },
+      { h: "<b>180–200 g de bistec</b>", n: "1–2 veces", when: "Mar y Sáb", sub: OPT_BISTEC },
+      { h: "<b>180–200 g de lomo de Costco en salsa roja</b>", n: "ocasional", when: "Sáb en lugar del bistec, y de forma ocasional" }
+    ]},
+    { t: "Cena",
+      baseTitle: "Con cada cena",
+      base: [
+        "4 quesadillas con poquito queso (con el hígado van 4 tortillas)",
+        "½ taza de lentejas cocidas",
+        "½ aguacate en 3–4 cenas por semana"
+      ],
+      orden: "Proteína · veces por semana", opts: [
+      { h: "<b>3 huevos revueltos</b> con champiñones, espinaca, jitomate y cebolla", n: "3 veces", when: "Jue, Vie y Sáb" },
+      { h: "<b>180–200 g de hígado de res asado</b>", n: "1 vez", when: "Lun" },
+      { h: "<b>180–190 g de pechuga de pollo asada</b>", n: "1 vez", when: "Mar" },
+      { h: "<b>2 chuletas ahumadas</b> · 200 g aprox.", n: "1 vez", when: "Mié" }
+    ], nota: "El domingo es variable: una de las cuatro anteriores." },
+    { t: "Bebidas", orden: "Veces por semana", opts: [
+      { h: "<b>Agua natural</b>", n: "a diario", when: "Todo el día" },
+      { h: "<b>Topo Chico de 600 ml con limón y una pizca de sal</b>", n: "1 vez", when: "Una vez por semana" }
+    ]}
+  ];
+
+  function renderLista() {
+    $("listaBody").innerHTML = LISTA.map(function (s) {
+      var h = '<section class="lcard"><h3>' + s.t + '</h3>';
+      if (s.base) {
+        h += '<div class="lbase"><b>' + s.baseTitle + '</b><ul>' +
+          s.base.map(function (x) { return "<li>" + x + "</li>"; }).join("") + '</ul></div>';
+      }
+      if (s.orden) h += '<p class="lorden">' + s.orden + '</p>';
+      h += '<ol class="lopts">' + s.opts.map(function (o) {
+        var inner = '<div><div class="lhead"><span>' + o.h + '</span>' + (o.n ? '<span class="cnt">' + o.n + '</span>' : '') + '</div>';
+        if (o.when) inner += '<span class="when">' + o.when + '</span>';
+        if (o.lines) inner += o.lines.map(function (l) { return '<span class="linea">' + l + '</span>'; }).join("");
+        if (o.sub) {
+          inner += '<ul class="opts">' + o.sub.map(function (x, i) {
+            return '<li><b>' + "abc".charAt(i) + ')</b><span>' + x + '</span></li>';
+          }).join("") + '</ul>';
+        }
+        return '<li>' + inner + '</div></li>';
+      }).join("") + '</ol>';
+      if (s.nota) h += '<p class="lnota">' + s.nota + '</p>';
+      return h + '</section>';
+    }).join("");
+  }
+
+  /* ================= PESTAÑAS ================= */
+  var NAMES = ["dieta", "rutina", "lista"];
+  var tabs = document.querySelectorAll(".tabs button");
+  function setTab(name) {
+    document.body.dataset.tab = name;
+    tabs.forEach(function (b) { b.setAttribute("aria-selected", String(b.dataset.tab === name)); });
+    NAMES.forEach(function (n) { $(n).hidden = n !== name; });
+    $("themeColor").setAttribute("content", name === "rutina" ? "#cf5a22" : "#2e6a3e");
+    try { history.replaceState(null, "", "#" + name); } catch (e) {}
+    window.scrollTo({ top: 0 });
+  }
+  tabs.forEach(function (b) { b.addEventListener("click", function () { setTab(b.dataset.tab); }); });
+
+  renderDay();
+  renderWeek();
+  renderLista();
+  var start = location.hash.replace("#", "");
+  setTab(NAMES.indexOf(start) > -1 ? start : "dieta");
+})();
+</script>
+</body>
+</html>
